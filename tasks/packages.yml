@@ -1,0 +1,81 @@
+---
+###############################################################################
+# Paperless-NG Packages
+###############################################################################
+# Install packages.
+#
+# Args:
+#   _paperlessng_ocr_packages: list of str containing OCR packages to install.
+#
+# Reference:
+# * https://paperless-ng.readthedocs.io/en/latest/index.html
+# * https://github.com/jonaswinkler/paperless-ng
+# * https://github.com/agl/jbig2enc
+
+- name: 'packages | add packages (may take a while)'
+  ansible.builtin.debug:
+    msg: |
+      Packages are being installed. This will take a few minutes.
+
+- name: 'packages | install dependencies'
+  ansible.builtin.apt:
+    name:  '{{ item }}'
+    state: 'latest'
+    update_cache: true
+    install_recommends: true
+  loop:
+    - '{{ paperlessng_default_packages }}'
+    - '{{ paperlessng_default_ocr_my_pdf }}'
+    - '{{ _paperlessng_ocr_packages }}'
+    - '{{ paperlessng_default_additional }}'
+
+- name: 'packages | add notesalexp.org repo key'
+  ansible.builtin.apt_key:
+    url:   'https://notesalexp.org/debian/alexp_key.asc'
+    state: 'present'
+  when: paperlessng_pfda_compression
+
+- name: 'packages | add jbig2enc (pdf/a compression) repo'
+  ansible.builtin.apt_repository:
+    repo:     'deb https://notesalexp.org/debian/{{ ansible_distribution_release }}/ {{ ansible_distribution_release }} main'
+    filename: 'notesalexp'
+    state:    'present'
+    update_cache: true
+  when: paperlessng_pfda_compression
+
+- name: 'packages | set jbig2enc (pdf/a compression) pinning'
+  ansible.builtin.copy:
+    src:   'notesalexp'
+    dest:  '/etc/apt/preferences.d/notesalexp'
+    owner: 'root'
+    group: 'root'
+    mode:  0644
+  when: paperlessng_pfda_compression
+
+- name: 'packages | install jbig2enc (pdf/a compression) library'
+  ansible.builtin.apt:
+    name:  'jbig2enc'
+    state: 'latest'
+    update_cache: true
+  when: paperlessng_pfda_compression
+
+- name: 'packages | install redis'
+  ansible.builtin.apt:
+    name:  '{{ paperlessng_default_redis }}'
+    state: 'latest'
+    update_cache: true
+  when: paperlessng_enable_redis
+
+- name: 'packages | modify pgsql support'
+  ansible.builtin.apt:
+    name:  '{{ paperlessng_default_pgsql }}'
+    state: '{% if paperlessng_db_type == "pgsql" %}latest{% else %}absent{% endif %}'
+    update_cache: true
+    purge: '{% if paperlessng_db_type == "pgsql" %}false{% else %}true{% endif %}'
+
+- name: 'packages | modify sqlite support'
+  ansible.builtin.apt:
+    name:  '{{ paperlessng_default_sqlite }}'
+    state: '{% if paperlessng_db_type == "sqlite" %}latest{% else %}absent{% endif %}'
+    update_cache: true
+    purge: '{% if paperlessng_db_type == "sqlite" %}false{% else %}true{% endif %}'

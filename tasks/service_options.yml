@@ -1,0 +1,29 @@
+---
+###############################################################################
+# Paperless Service Option Configuration
+###############################################################################
+# Each release contains templated systemd services that need to be customized
+# to the installation. Write common settings to service and ensure it is
+# actively reloaded to pickup the latest settings.
+#
+# Args:
+#   service: str full path to service template.
+#   _paperlessng_install_dir: str versioned install location.
+
+- name: 'service | update service options'
+  community.general.ini_file:
+    path:    '{{ service }}'
+    section: 'Service'
+    option:  '{{ item.option }}'
+    value:   '{{ item.value }}'
+    owner:   '{{ paperlessng_user }}'
+    group:   '{{ paperlessng_group }}'
+    mode:    0640
+  loop:
+    - {option: 'User',             value: '{{ paperlessng_user }}'}
+    - {option: 'Group',            value: '{{ paperlessng_group }}'}
+    - {option: 'WorkingDirectory', value: '{{ _paperlessng_install_dir }}/src'}
+    - {option: 'ProtectSystem',    value: 'full'}
+    - {option: 'NoNewPrivileges',  value: 'true'}
+    - {option: 'PrivateUsers',     value: 'true'}
+    - {option: 'PrivateDevices',   value: 'true'}

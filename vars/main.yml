@@ -1,0 +1,80 @@
+---
+###############################################################################
+# Default Paperless-NG Package Dependencies
+###############################################################################
+# Default required packages for Paperless-NG install.
+#
+# Reference:
+# * https://paperless-ng.readthedocs.io/en/latest/setup.html#bare-metal-route
+
+# python3-dev is no longer needed.
+paperlessng_default_packages:
+  - 'python3'
+  - 'python3-pip'
+  - 'python3-virtualenv' # Added for updated virtualenv/ansible pip.
+  - 'fonts-liberation'
+  - 'imagemagick'
+  - 'optipng'
+  - 'gnupg2'
+  - 'libmagic-dev'
+  - 'mime-support'
+
+paperlessng_default_ocr_my_pdf:
+  - 'unpaper'
+  - 'ghostscript'
+  - 'icc-profiles-free'
+  - 'qpdf'
+  - 'liblept5'
+  - 'libxml2'
+  - 'pngquant'
+  - 'zlib1g'
+  - 'tesseract-ocr'
+
+paperlessng_default_redis:
+  - 'redis-server'
+
+paperlessng_default_pgsql:
+  - 'libpq-dev'
+
+paperlessng_default_sqlite:
+  - 'sqlite3'
+
+paperlessng_default_additional:
+  - 'img2pdf'
+
+###############################################################################
+# Default Paperless-NG Configuration Root
+###############################################################################
+# Default install location for paperless-ng versioned installs.
+
+paperlessng_default_install_dir: '/var/lib'
+
+###############################################################################
+# Default Paperless-NG User Group
+###############################################################################
+# Default group settings if an paperlessng user is force created.
+
+paperlessng_default_group:
+  name: 'paperlessng'
+  gid:  950
+
+###############################################################################
+# Default Paperless-NG User Account
+###############################################################################
+# Default user settings if an paperlessng user is force created.
+#
+# Logins are disabled.
+
+paperlessng_default_user:
+  name:            'paperlessng'
+  group:           'paperlessng'
+  uid:             950
+  shell:           '/usr/sbin/nologin'
+  home:            '/etc/paperlessng'
+  comment:         'paperlessng system account,,,'
+  create_home:     true
+  password:        '!'
+  password_lock:   true
+  update_password: 'always'
+  expires:         -1
+  system:          true

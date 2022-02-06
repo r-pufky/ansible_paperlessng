@@ -1,0 +1,32 @@
+---
+###############################################################################
+# Remove Old Paperless NG Versions
+###############################################################################
+# Remove versioned Paperless NG directories, excluding the currently set
+# paperless NG version and any version where user data is defined to reside.
+#
+# Args:
+#   _paperlessng_target: str full version (ng-x.x.x) to install.
+
+- name: 'clean | find existing installations'
+  ansible.builtin.find:
+    paths:     '{{ paperlessng_default_install_dir }}'
+    file_type: 'directory'
+    use_regex: true
+    patterns:
+      - '.*paperlessng-.*'
+    recurse:   false
+  register: _paperlessng_existing_installs
+
+# Never delete old version if user data resides in it.
+- name: 'clean | remove old versions'
+  ansible.builtin.file:
+    path:  '{{ item.path }}'
+    state: 'absent'
+  loop: '{{ _paperlessng_existing_installs.files }}'
+  when: |
+    item.path not in paperlessng_consumption_dir and
+    item.path not in paperlessng_data_dir and
+    item.path not in paperlessng_media_root and
+    _paperlessng_target != item.path.split("-", 1)[-1] and
+    paperlessng_delete_old_versions

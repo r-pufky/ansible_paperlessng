@@ -1,0 +1,48 @@
+---
+###############################################################################
+# Manager Paperless-NG Users
+###############################################################################
+# Check if user exists and create if enabled.
+#
+# Args:
+#   paperlessng_user: string paperlessng username.
+#   paperlessng_group: string paperlessng group.
+#   paperlessng_create_user: boolean true to create role default user.
+#   paperlessng_default_user: dict containing builitin.user options for paperlessng.
+#   paperlessng_default_group: dict containing builitin.group options for paperlessng.
+
+- name: 'manage users | confirm user exists'
+  ansible.builtin.command: 'id {{ paperlessng_user }}'
+  register: _paperlessng_user_exists
+  changed_when: _paperlessng_user_exists.rc > 0
+  failed_when: false
+
+- name: 'manage users | confirm group exists'
+  ansible.builtin.command: 'groups {{ paperlessng_group }}'
+  register: _paperlessng_group_exists
+  changed_when: _paperlessng_group_exists.rc > 0
+  failed_when: false
+
+- name: 'manage users | create paperlessng group'
+  ansible.builtin.group:
+    name:  '{{ paperlessng_default_group.name }}'
+    gid:   '{{ paperlessng_default_group.gid }}'
+    state: 'present'
+  when: paperlessng_create_user and _paperlessng_group_exists.rc != 0
+
+- name: 'manage users | create paperlessng user (logins disabled)'
+  ansible.builtin.user:
+    name:            '{{ paperlessng_default_user.name }}'
+    group:           '{{ paperlessng_default_user.group }}'
+    uid:             '{{ paperlessng_default_user.uid }}'
+    shell:           '{{ paperlessng_default_user.shell }}'
+    home:            '{{ paperlessng_default_user.home }}'
+    comment:         '{{ paperlessng_default_user.comment }}'
+    create_home:     '{{ paperlessng_default_user.create_home }}'
+    password:        '{{ paperlessng_default_user.password }}'
+    password_lock:   '{{ paperlessng_default_user.password_lock }}'
+    update_password: '{{ paperlessng_default_user.update_password }}'
+    expires:         '{{ paperlessng_default_user.expires }}'
+    system:          '{{ paperlessng_default_user.system }}'
+    state:           'present'
+  when: paperlessng_create_user and _paperlessng_user_exists.rc != 0

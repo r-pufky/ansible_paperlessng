@@ -1,0 +1,93 @@
+---
+###############################################################################
+# Paperless-NG Unpack Github Archive
+###############################################################################
+# Create versioned paperlessng directory and unpack 'complete' archive. Remove
+# Uncessary files.
+#
+# Args:
+#   _paperlessng_install_dir: str versioned install location.
+#   _paperlessng_archive: str local versioned archive location.
+#   _paperlessng_install_stat: stat object for the versioned install location.
+
+- name: 'unpack | create paperlessng directory'
+  ansible.builtin.file:
+    path:  '{{ _paperlessng_install_dir }}'
+    owner: '{{ paperlessng_user }}'
+    group: '{{ paperlessng_group }}'
+    mode:  0750
+    state: 'directory'
+
+- name: 'unpack | unpack archive'
+  ansible.builtin.unarchive:
+    src:        '{{ _paperlessng_archive }}'
+    remote_src: true
+    dest:       '{{ _paperlessng_install_dir }}'
+    creates:    '{{ _paperlessng_install_dir }}/paperless.conf'
+    owner:      '{{ paperlessng_user }}'
+    group:      '{{ paperlessng_group }}'
+    mode:       'a-st,o-rwx'
+    # Remove the leading 'paperlessng/' directory in the archive
+    extra_opts: '--strip-components=1'
+  register: _paperlessng_unpacked
+  when: not _paperlessng_install_stat.stat.exists
+  notify: 'reload paperlessng'
+
+- name: 'unpack | cleanup unused archive files'
+  ansible.builtin.file:
+    path:  '{{ item }}'
+    state: 'absent'
+  loop:
+    - '{{ _paperlessng_install_dir }}/docker'
+    - '{{ _paperlessng_install_dir }}/docs'
+    - '{{ _paperlessng_install_dir }}/.dockerignore'
+    - '{{ _paperlessng_install_dir }}/.env'
+    - '{{ _paperlessng_install_dir }}/Dockerfile'
+    - '{{ _paperlessng_install_dir }}/LICENSE'
+    - '{{ _paperlessng_install_dir }}/README.md'
+    - '{{ _paperlessng_install_dir }}/SECURITY.md'
+    - '{{ _paperlessng_install_dir }}/UPGRADING'
+  when: not _paperlessng_install_stat.stat.exists
+
+- name: 'unpack | cleanup archive data'
+  ansible.builtin.file:
+    path:  '{{ _paperlessng_install_dir }}/data'
+    state: 'absent'
+  when: _paperlessng_install_dir + '/data' != paperlessng_data_dir
+
+- name: 'unpack | cleanup archive consume'
+  ansible.builtin.file:
+    path:  '{{ _paperlessng_install_dir }}/consume'
+    state: 'absent'
+  when: _paperlessng_install_dir + '/consume' != paperlessng_consumption_dir
+
+- name: 'unpack | cleanup archive media'
+  ansible.builtin.file:
+    path:  '{{ _paperlessng_install_dir }}/media'
+    state: 'absent'
+  when: _paperlessng_install_dir + '/media' != paperlessng_media_root
+
+# Paperless searches for paperless.conf in same directory before /etc. All
+# releases use 'paperless.conf' instead of 'paperless.conf.template' (or some
+# other moniker) which loads unconfigured options instead of configured ones.
+# Prevent this from happening.
+#
+# Reference:
+# * https://github.com/jonaswinkler/paperless-ng/blob/7bc8325df910ab57ed07849a3ce49a3011ba55b6/src/paperless/settings.py#L13
+- name: 'unpack | fix config precedence ordering issue'
+  ansible.builtin.command: 'mv -f "{{ _paperlessng_install_dir }}/paperless.conf" "{{ _paperlessng_install_dir }}/paperless.conf.template"'
+  args:
+    removes: '{{ _paperlessng_install_dir }}/paperless.conf'
+  changed_when: false
+
+# Removing executable permissions inside virtual environments will break them;
+# permissions are set in virtual environment setup.
+- name: 'unpack | set install permissions' # noqa no-handler conditional
+  ansible.builtin.shell: |
+    chown -R {{ paperlessng_user }}:{{ paperlessng_group }} '{{ _paperlessng_install_dir }}' &&
+    find '{{ _paperlessng_install_dir }}' -type d ! -path "*.venv*" -exec chmod 0750 {} \; &&
+    find '{{ _paperlessng_install_dir }}' -type f ! -path "*.venv*" -exec chmod 0640 {} \;
+  args:
+    warn: false
+  changed_when: false
+  when: _paperlessng_unpacked.changed

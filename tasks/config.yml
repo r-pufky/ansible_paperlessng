@@ -1,0 +1,82 @@
+---
+###############################################################################
+# Paperless Python Virtual Environment
+###############################################################################
+# Configure Python Virtual Environment. This is created in the versioned
+# install location so state is keep between versions. Assumes archive is
+# already unpacked and cleaned.
+#
+# Args:
+#   _paperlessng_venv: str versioned python virtual environment location.
+#   _paperlessng_install_dir: str versioned install location.
+#   _paperlessng_staticdir: str calculated static serving location.
+
+- name: 'config | set paperlessng config'
+  ansible.builtin.template:
+    src:   'paperlessng.conf.j2'
+    dest:  '/etc/paperless.conf'
+    owner: 'root'
+    group: 'paperlessng' # root originally.
+    mode:  0640 # 0644 originally.
+  notify: 'reload paperlessng'
+
+- name: 'config | set consume permissions'
+  file:
+    path:  '{{ paperlessng_consumption_dir }}'
+    owner: '{{ paperlessng_consumption_perms.user }}'
+    group: '{{ paperlessng_consumption_perms.group }}'
+    mode:  '{{ paperlessng_consumption_perms.mode }}'
+    state: directory
+  when: paperlessng_consumption_perms|length > 0
+
+- name: 'config | set data permissions'
+  file:
+    path:  '{{ paperlessng_data_dir }}'
+    owner: '{{ paperlessng_data_perms.user }}'
+    group: '{{ paperlessng_data_perms.group }}'
+    mode:  '{{ paperlessng_data_perms.mode }}'
+    state: directory
+  when: paperlessng_data_perms|length > 0
+
+- name: 'config | set media permissions'
+  file:
+    path:  '{{ paperlessng_media_root }}'
+    owner: '{{ paperlessng_media_perms.user }}'
+    group: '{{ paperlessng_media_perms.group }}'
+    mode:  '{{ paperlessng_media_perms.mode }}'
+    state: directory
+  when: paperlessng_media_perms|length > 0
+
+- name: 'config | set static dir permissions'
+  file:
+    path:  '{{ _paperlessng_staticdir }}'
+    owner: '{{ paperlessng_staticdir_perms.user }}'
+    group: '{{ paperlessng_staticdir_perms.group }}'
+    mode:  '{{ paperlessng_staticdir_perms.mode }}'
+    state: directory
+  when: paperlessng_staticdir_perms|length > 0
+
+- name: 'config | migrate database schema'
+  ansible.builtin.command: '{{ _paperlessng_venv }}/bin/python3 {{ _paperlessng_install_dir }}/src/manage.py migrate'
+  changed_when: false
+  become: true
+  become_user: '{{ paperlessng_user }}'
+  # Reference: https://github.com/ansible/ansible/issues/16048#issuecomment-229012509
+  vars:
+    ansible_ssh_pipelining: true
+
+- ansible.builtin.include_tasks: create_root.yml
+
+- name: 'config | enable imagemagick pdf processing'
+  ansible.builtin.lineinfile:
+    path:     '/etc/ImageMagick-6/policy.xml'
+    regexp:   '(\s+)<policy domain="coder" rights=".*" pattern="PDF" />'
+    line:     '\1<policy domain="coder" rights="read|write" pattern="PDF" />'
+    backrefs: true
+
+- name: 'config | set web server listen on {{ paperlessng_address }}:{{ paperlessng_port }}'
+  ansible.builtin.lineinfile:
+    path:   '{{ _paperlessng_install_dir }}/gunicorn.conf.py'
+    regexp: '^bind = '
+    line:   "bind = '{{ paperlessng_address }}:{{ paperlessng_port }}'"
+  notify: 'reload paperlessng'

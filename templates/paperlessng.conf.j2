@@ -1,0 +1,88 @@
+# Have a look at the docs for documentation.
+# https://paperless-ng.readthedocs.io/en/latest/configuration.html
+
+# Debug. Only enable this for development.
+
+PAPERLESS_DEBUG={{ paperlessng_debug|string|lower }}
+
+# Required services
+
+PAPERLESS_REDIS={{ paperlessng_redis }}
+{% if paperlessng_db_type != 'sqlite' %}
+PAPERLESS_DBHOST={{ paperlessng_dbhost }}
+PAPERLESS_DBPORT={{ paperlessng_dbport }}
+PAPERLESS_DBNAME={{ paperlessng_dbname }}
+PAPERLESS_DBUSER={{ paperlessng_dbuser }}
+PAPERLESS_DBPASS={{ paperlessng_dbpass }}
+PAPERLESS_DBSSLMODE={{ paperlessng_dbsslmode }}
+{% endif %}
+
+# Paths and folders
+
+PAPERLESS_CONSUMPTION_DIR={{ paperlessng_consumption_dir }}
+PAPERLESS_DATA_DIR={{ paperlessng_data_dir }}
+PAPERLESS_MEDIA_ROOT={{ paperlessng_media_root }}
+PAPERLESS_STATICDIR={{ _paperlessng_staticdir }}
+PAPERLESS_FILENAME_FORMAT={{ paperlessng_filename_format }}
+
+# Logging
+# Section left out of config template.
+PAPERLESS_LOGGING_DIR={{ paperlessng_logging_dir }}
+PAPERLESS_LOGROTATE_MAX_SIZE={{ paperlessng_logrotate_max_size }}
+PAPERLESS_LOGROTATE_MAX_BACKUPS={{ paperlessng_logrotate_max_backups }}
+
+# Security and hosting
+
+PAPERLESS_SECRET_KEY={{ paperlessng_secret_key }}
+PAPERLESS_ALLOWED_HOSTS={{ paperlessng_allowed_hosts|join(',') }}
+PAPERLESS_CORS_ALLOWED_HOSTS={{ paperlessng_cors_allowed_hosts|join(',') }}
+PAPERLESS_FORCE_SCRIPT_NAME={{ paperlessng_force_script_name }}
+PAPERLESS_STATIC_URL={{ paperlessng_static_url }}
+PAPERLESS_AUTO_LOGIN_USERNAME={{ paperlessng_auto_login_username }}
+PAPERLESS_COOKIE_PREFIX={{ paperlessng_cookie_prefix }}
+PAPERLESS_ENABLE_HTTP_REMOTE_USER={{ paperlessng_enable_http_remote_user|string|lower }}
+
+# OCR settings
+
+PAPERLESS_OCR_LANGUAGE={{ paperlessng_ocr_language|join('+') }}
+PAPERLESS_OCR_MODE={{ paperlessng_ocr_mode }}
+PAPERLESS_OCR_OUTPUT_TYPE={{ paperlessng_ocr_output_type }}
+PAPERLESS_OCR_PAGES={{ paperlessng_ocr_pages }}
+PAPERLESS_OCR_IMAGE_DPI={{ paperlessng_ocr_image_dpi }}
+PAPERLESS_OCR_CLEAN={{ paperlessng_ocr_clean }}
+PAPERLESS_OCR_DESKEW={{ paperlessng_ocr_deskew|string|lower }}
+PAPERLESS_OCR_ROTATE_PAGES={{ paperlessng_ocr_rotate_pages|string|lower }}
+PAPERLESS_OCR_ROTATE_PAGES_THRESHOLD={{ paperlessng_ocr_rotate_pages_threshold }}
+# Always use lossless compression if pdf/a high compression is used.
+PAPERLESS_OCR_USER_ARGS={{ paperlessng_ocr_user_args|combine({'jbig2_lossy': false} if paperlessng_pfda_compression else {})|to_json }}
+PAPERLESS_CONVERT_MEMORY_LIMIT={{ paperlessng_convert_memory_limit }}
+PAPERLESS_CONVERT_TMPDIR={{ paperlessng_convert_tmpdir }}
+
+# Software tweaks
+
+PAPERLESS_TASK_WORKERS={{ paperlessng_task_workers }}
+PAPERLESS_THREADS_PER_WORKER={{ paperlessng_threads_per_worker }}
+PAPERLESS_TIME_ZONE={{ paperlessng_time_zone }}
+PAPERLESS_CONSUMER_POLLING={{ paperlessng_consumer_polling }}
+PAPERLESS_CONSUMER_DELETE_DUPLICATES={{ paperlessng_consumer_delete_duplicates|string|lower }}
+PAPERLESS_CONSUMER_RECURSIVE={{ paperlessng_consumer_recursive|string|lower }}
+PAPERLESS_CONSUMER_IGNORE_PATTERNS={{ paperlessng_consumer_ignore_patterns|to_json }}
+PAPERLESS_CONSUMER_SUBDIRS_AS_TAGS={{ paperlessng_consumer_subdirs_as_tags|string|lower }}
+PAPERLESS_OPTIMIZE_THUMBNAILS={{ paperlessng_optimize_thumbnails|string|lower }}
+PAPERLESS_POST_CONSUME_SCRIPT={{ paperlessng_post_consume_script }}
+PAPERLESS_FILENAME_DATE_ORDER={{ paperlessng_filename_date_order }}
+PAPERLESS_FILENAME_PARSE_TRANSFORMS={{ paperlessng_filename_parse_transforms }}
+PAPERLESS_THUMBNAIL_FONT_NAME='{{ paperlessng_thumbnail_font_name }}'
+PAPERLESS_IGNORE_DATES={{ paperlessng_ignore_dates }}
+
+# Tika settings
+
+PAPERLESS_TIKA_ENABLED={{ paperlessng_tika_enabled|string|lower }}
+PAPERLESS_TIKA_ENDPOINT={{ paperlessng_tika_endpoint }}
+PAPERLESS_TIKA_GOTENBERG_ENDPOINT={{ paperlessng_tika_gotenberg_endpoint }}
+
+# Binaries
+
+PAPERLESS_CONVERT_BINARY={{ paperlessng_convert_binary }}
+PAPERLESS_GS_BINARY={{ paperlessng_gs_binary }}
+PAPERLESS_OPTIPNG_BINARY={{ paperlessng_optipng_binary }}

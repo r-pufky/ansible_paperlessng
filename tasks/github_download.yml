@@ -1,0 +1,41 @@
+---
+###############################################################################
+# Paperless NG Github Download
+###############################################################################
+# Download and validate the paperless-ng package from github, using the
+# specified version.
+#
+# Currently 'latest' versioned releases can be full releases or branches. So
+# 'latest' should not be used; though it is still enabled in case the release
+# strucutrue ever changes.
+#
+# Args:
+#   _paperlessng_target: str full version (ng-x.x.x) to install.
+#   _paperlessng_url: str download url for current release.
+#   _paperlessng_install_dir: str versioned install location.
+#   _paperlessng_archive: str local versioned archive location.
+#
+# Generates:
+#   _paperlessng_install_stat: stat object for the versioned install location.
+#
+# Reference:
+# * https://roundcube.net/
+# * https://atetux.com/how-to-install-roundcube-webmail-1-4-on-debian-10
+
+- name: 'download | check local versioned install directory'
+  ansible.builtin.stat:
+    path: '{{ _paperlessng_install_dir }}'
+  register: _paperlessng_install_stat
+
+- name: 'download | download paperless-ng {{ _paperlessng_target }}'
+  ansible.builtin.get_url:
+    url:    '{{ _paperlessng_url }}'
+    dest:   '{{ _paperlessng_archive }}'
+    mode:   0644
+    owner:  '{{ paperlessng_user }}'
+    group:  '{{ paperlessng_group }}'
+  register: _paperless_download
+  until: _paperless_download is succeeded
+  retries: 5
+  delay: 2
+  when: not _paperlessng_install_stat.stat.exists

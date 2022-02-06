@@ -1,0 +1,60 @@
+---
+###############################################################################
+# Paperless-NG Core
+###############################################################################
+# Caculate core paperlessng variables for installation and upgrade.
+#
+# Some PDF's with older ICC profiles may fail to be injested. Though rare,
+# thsee can be manually pre-processed to fix the ICC profiles.
+#
+#   gs -o output.pdf -sDEVICE=pdfwrite -dPDFSETTINGS=/prepress input.pdf
+#
+# Generates:
+#   _paperlessng_target: str full version (ng-x.x.x) to install.
+#   _paperlessng_ocr_packages: list of str containing OCR packages to install.
+#   _paperlessng_url: str download url for current release.
+#   _paperlessng_install_dir: str versioned install location.
+#   _paperlessng_archive: str local versioned archive location.
+#   _paperlessng_venv: str versioned python virtual environment location.
+#   _paperlessng_staticdir: str calculated static serving location.
+#   _paperlessng_service_consumer: str path to consumer service definition.
+#   _paperlessng_service_scheduler: str path to scheduler service definition.
+#   _paperlessng_service_webserver: str path to webserver service definition.
+#
+# Reference:
+# * https://paperless-ng.readthedocs.io/en/latest/index.html
+# * https://github.com/jonaswinkler/paperless-ng/releases/
+# * https://kcore.org/2021/05/08/paperless-ng/
+
+- name: 'core | determine latest release version number'
+  block:
+    - name: 'core | get release metadata'
+      ansible.builtin.uri:
+        url: 'https://api.github.com/repos/jonaswinkler/paperless-ng/releases/latest'
+        return_content: true
+      register: _paperlessng_remote_metadata
+
+    - name: 'core | set latest release'
+      ansible.builtin.set_fact:
+        _paperlessng_target: '{{ _paperlessng_remote_metadata.json.tag_name }}'
+  when: paperlessng_version == 'latest'
+
+- name: 'core | set version target ({{ paperlessng_version }})'
+  ansible.builtin.set_fact:
+    _paperlessng_target: '{{ paperlessng_version }}'
+  when: paperlessng_version != 'latest'
+
+- name: 'core | generate versioned locations'
+  ansible.builtin.set_fact:
+    _paperlessng_ocr_packages: '{% if paperlessng_ocr_languages|length == 0 %}{{ ["tesseract-ocr-all"] }}{% else %}{{ paperlessng_ocr_languages|map("regex_replace", "^(.*)$", "tesseract-ocr-\1")|list }}{% endif %}'
+    _paperlessng_url:          'https://github.com/jonaswinkler/paperless-ng/releases/download/{{ paperlessng_version }}/paperless-{{ paperlessng_version }}.tar.xz'
+    _paperlessng_install_dir:  '{{ paperlessng_default_install_dir }}/paperlessng-{{ _paperlessng_target }}'
+    _paperlessng_archive:      '/tmp/paperlessng-{{ _paperlessng_target }}.tar.xz'
+
+- name: 'core | generate install configuration'
+  ansible.builtin.set_fact:
+    _paperlessng_venv:              '{{ _paperlessng_install_dir }}/.venv'
+    _paperlessng_staticdir:         '{% if paperlessng_staticdir|length > 0 %}{{ paperlessng_staticdir }}{% else %}{{ _paperlessng_install_dir }}/static{% endif %}'
+    _paperlessng_service_consumer:  '{{ _paperlessng_install_dir }}/scripts/paperless-consumer.service'
+    _paperlessng_service_scheduler: '{{ _paperlessng_install_dir }}/scripts/paperless-scheduler.service'
+    _paperlessng_service_webserver: '{{ _paperlessng_install_dir }}/scripts/paperless-webserver.service'

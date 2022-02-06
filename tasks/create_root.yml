@@ -1,0 +1,49 @@
+---
+###############################################################################
+# Paperless NG Create root User
+###############################################################################
+# The superuser script cannot be run from non-interactive terminals, instead
+# manually create the root user in the paperlessng virtual environment.
+#
+# Interactive only:
+#
+#  sudo -Hu paperless python3 manage.py createsuperuser
+#
+# Args:
+#   _paperlessng_venv: str versioned python virtual environment location.
+#   _paperlessng_install_dir: str versioned install location.
+#
+# Reference:
+# * https://paperless-ng.readthedocs.io/en/latest/setup.html#bare-metal-route
+
+- name: 'config | set paperlessng root user'
+  ansible.builtin.command: '{{ _paperlessng_venv }}/bin/python3 {{ _paperlessng_install_dir }}/src/manage.py shell -c "{{ creation_script }}"'
+  # Reference: https://github.com/ansible/ansible/issues/16048#issuecomment-229012509
+  vars:
+    ansible_ssh_pipelining: true
+    creation_script: |
+      from django.contrib.auth.models import User
+      from django.contrib.auth.hashers import get_hasher
+
+      if User.objects.filter(username='{{ paperlessng_root_name }}').exists():
+          user = User.objects.get(username='{{ paperlessng_root_name }}')
+          old = user.__dict__.copy()
+
+          user.is_superuser = True
+          user.email = '{{ paperlessng_root_email }}'
+          user.set_password('{{ paperlessng_root_password }}')
+          user.save()
+          new = user.__dict__
+
+          algorithm, iterations, old_salt, old_hash = old['password'].split('$')
+          new_password_old_salt = get_hasher(algorithm).encode(password='{{ paperlessng_root_password }}', salt=old_salt, iterations=int(iterations))
+          _, _, _, new_hash = new_password_old_salt.split('$')
+          if not (old_hash == new_hash and old['is_superuser'] == new['is_superuser'] and old['email'] == new['email']):
+              print('changed')
+      else:
+          User.objects.create_superuser('{{ paperlessng_root_name }}', '{{ paperlessng_root_email }}', '{{ paperlessng_root_password }}')
+          print('changed')
+  changed_when: false
+  become: true
+  become_user: '{{ paperlessng_user }}'
+  no_log: true # passwords

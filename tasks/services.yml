@@ -1,0 +1,70 @@
+---
+###############################################################################
+# Paperless Service Configuration
+###############################################################################
+# Each release contains templated systemd services that need to be customized
+# to the installation. Write settings to service and ensure it is actively
+# reloaded to pickup the latest settings.
+#
+# Args:
+#   _paperlessng_venv: str versioned python virtual environment location.
+#   _paperlessng_install_dir: str versioned install location.
+#   _paperlessng_service_consumer: str path to consumer service definition.
+#   _paperlessng_service_scheduler: str path to scheduler service definition.
+#   _paperlessng_service_webserver: str path to webserver service definition.
+
+- name: 'config | set common service options'
+  ansible.builtin.include_tasks: service_options.yml
+  loop:
+    - '{{ _paperlessng_service_consumer }}'
+    - '{{ _paperlessng_service_scheduler }}'
+    - '{{ _paperlessng_service_webserver }}'
+  loop_control:
+    loop_var: 'service'
+
+- name: 'config | set paperless-consumer service'
+  community.general.ini_file:
+    path:    '{{ _paperlessng_service_consumer }}'
+    section: 'Service'
+    option:  'ExecStart'
+    value:   '{{ _paperlessng_venv }}/bin/python3 manage.py document_consumer'
+    owner:   '{{ paperlessng_user }}'
+    group:   '{{ paperlessng_group }}'
+    mode:    0640
+  notify: 'reload paperlessng'
+
+- name: config | set paperless-scheduler service'
+  community.general.ini_file:
+    path:    '{{ _paperlessng_service_scheduler }}'
+    section: 'Service'
+    option:  'ExecStart'
+    value:   '{{ _paperlessng_venv }}/bin/python3 manage.py qcluster'
+    owner:   '{{ paperlessng_user }}'
+    group:   '{{ paperlessng_group }}'
+    mode:    0640
+  notify: 'reload paperlessng'
+
+- name: config | set paperless-webserver service'
+  community.general.ini_file:
+    path:    '{{ _paperlessng_service_webserver }}'
+    section: 'Service'
+    option:  'ExecStart'
+    value:   '{{ _paperlessng_venv }}/bin/gunicorn -c {{ _paperlessng_install_dir }}/gunicorn.conf.py paperless.asgi:application'
+    owner:   '{{ paperlessng_user }}'
+    group:   '{{ paperlessng_group }}'
+    mode:    0640
+  notify: 'reload paperlessng'
+
+- name: 'config | stage paperlessng services'
+  ansible.builtin.copy:
+    remote_src: true
+    src:        '{{ item }}'
+    dest:       '/etc/systemd/system/'
+    owner:   'root'
+    group:   'root'
+    mode:    0755
+  loop:
+    - '{{ _paperlessng_service_consumer }}'
+    - '{{ _paperlessng_service_scheduler }}'
+    - '{{ _paperlessng_service_webserver }}'
+  notify: 'reload paperlessng'

@@ -1,0 +1,9 @@
+# Never prefer packages from notesalexp.org.
+Package: *
+Pin: release o=notesalexp.org
+Pin-Priority: 1
+
+# Enable jbig2enc install/updating.
+Package: jbig2enc
+Pin: release o=notesalexp.org
+Pin-Priority: 500

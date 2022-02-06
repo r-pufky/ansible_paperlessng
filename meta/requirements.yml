@@ -1,0 +1,9 @@
+---
+# Ansible galaxy packages
+
+collections:
+  # https://docs.ansible.com/ansible/latest/collections/community/general/
+  # ufw, modprobe, archive, locale_gen, filetree, composer
+  - community.general
+
+roles: []
