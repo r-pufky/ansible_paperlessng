@@ -1,0 +1,387 @@
+---
+###############################################################################
+# Paperless NG Role Configuration
+###############################################################################
+# Electronic Document Management System.
+#
+# Suggested Use (based on archivst recommendations):
+#
+# 1. **Document Types** refer to the broad type of document in question. Is it
+#    a letter? Receipt? Bill? Every instance will be different, but this should
+#    be your broadest field. You just want to more of less get it in the
+#    ballpark. For example, my Receipts doctype holds receipts that I scan in,
+#    but it will also hold confirmations from my debtors that I paid a bill, or
+#    an email from Cash app that I sold Bitcoin.
+#
+# 2. **Correspondent** refers to the person/organization you are communicating
+#    with in the document. A bill from your credit card would have Capital One
+#    as correspondent for example, while a copy of your W2 might go under IRS.
+#    Again, you can be broad here, as trying to narrow it down is going to
+#    drive you crazy.
+#
+# 3. **Tags** are used to answer the below basic concepts:
+#
+#   * **Who** is it referring to? In my case, I have tags for myself, my wife,
+#     the kids, and the dogs. They are all the same color to easily denote
+#     that. Note that this is NOT the same as correspondent.
+#
+#   * **What** is it referring to? Is it related to your car loan? Is it
+#     related to your homes maintenance? Mark these tags in a different color
+#     to easily notice them.
+#
+#   * **When** is the information in this document relevant? Was it a bill from
+#     2 years ago? Does it relate to your taxes for 2022? Personally, I make
+#     tags for the year it was received, as it makes it easier to sort. You can
+#     further break this down by month if needed.
+#
+# 4. I also make tags for special categories that I need to track. For example,
+#    I have a tag for any documents that we'll need for our taxes in the coming
+#    year, or critical documents (birth certs, etc). This helps to further
+#    break it down.
+#
+# Reference:
+# * https://old.reddit.com/r/selfhosted/comments/sdv0rr/paperless_ng_which_tags_document_types/hugenfp/
+
+# User that paperlessng will run under. Assumes externally managed.
+paperlessng_user:  'paperlessng'
+paperlessng_group: 'paperlessng'
+
+# Create 'paperlessng' user if not detected? See: vars/main.yml.
+paperlessng_create_user: false
+
+# Paperless root user. This user will automatically be created and have root.
+paperlessng_root_name:     'paperlessng'
+paperlessng_root_email:    'paperlessng@example.com'
+paperlessng_root_password: 'paperlessng'
+
+# Version. Use specific tagged release or 'latest'. Default: 'ng-1.5.0'.
+# Reference: https://github.com/jonaswinkler/paperless-ng/releases
+paperlessng_version: 'ng-1.5.0'
+
+# Should old paperlessng installs be removed automatically on upgrade success?
+paperlessng_delete_old_versions: true
+
+# Use RAM (mounted as /tmp via tmpfs) for document processing. Overrides
+# paperlessng_convert_tmpdir. Uses fstab sizes. Empty disables.
+paperlessng_tmp_memory: '1G'
+
+# Supported OCR languages. Use language only (remove tesseract-ocr-). Empty
+# will install all languages (Multi-GB).
+#
+# Reference:
+# * https://packages.debian.org/bullseye/tesseract-ocr-all
+paperlessng_ocr_languages:
+  - 'eng'
+
+# Install jbig2enc library for improved lossless high compression of pdf/a.
+# Lossless compression is automatically used if enabled.
+# WARNING: This enables packages from https://notesalexp.org; which is a
+# personal russian-based debian repository.
+paperlessng_pfda_compression: true
+
+# Webserver listen interface. Default: '0.0.0.0' (all interfaces).
+paperlessng_address: '0.0.0.0'
+
+# Webserver listen port. Default: 8000.
+paperlessng_port: 8000
+
+# Install a local redis memcache server? Redis is required, disable if hosted
+# externally. Default: true.
+paperlessng_enable_redis: true
+
+# Set user document submissions directory permissions.
+# {user: '', group: '', mode: ''}. Empty disables.
+paperlessng_consumption_perms: {}
+
+# Set configuration directory permissions.
+# {user: '', group: '', mode: ''}. Empty disables.
+paperlessng_data_perms:
+  user:  '{{ paperlessng_user }}'
+  group: '{{ paperlessng_group }}'
+  mode:  '0750'
+
+# Set stored user data directory permissions.
+# {user: '', group: '', mode: ''}. Empty disables.
+paperlessng_media_perms:
+  user:  '{{ paperlessng_user }}'
+  group: '{{ paperlessng_group }}'
+  mode:  '0750'
+
+# Set static serving directory permissions.
+# {user: '', group: '', mode: ''}. Empty disables.
+paperlessng_staticdir_perms:
+  user:  '{{ paperlessng_user }}'
+  group: '{{ paperlessng_group }}'
+  mode:  '0750'
+
+###############################################################################
+# Paperless NG paperless.conf Configuration
+###############################################################################
+# Data migrations between sqlite and pgsql must be done manually.
+#
+# Reference:
+# * https://paperless-ng.readthedocs.io/en/latest/configuration.html
+# * https://paperless-ng.readthedocs.io/en/ng-0.9.2/setup.html#moving-data-from-sqlite-to-postgresql
+
+# Enable debugging
+paperlessng_debug: false
+
+# Redis server location. Default: 'redis://localhost:6379' (local redis).
+paperlessng_redis: 'redis://localhost:6379'
+
+# Enable support for database type. 'sqlite' or 'pgsql'. Default: 'sqlite'.
+paperlessng_db_type:   'sqlite'
+paperlessng_dbhost:    'localhost' # Ignored for sqlite.
+paperlessng_dbport:    5432        # Ignored for sqlite.
+paperlessng_dbname:    'paperless' # Ignored for sqlite.
+paperlessng_dbuser:    'paperless' # Ignored for sqlite.
+paperlessng_dbpass:    'paperless' # Ignored for sqlite.
+paperlessng_dbsslmode: 'prefer'    # Ignored for sqlite.
+
+# Location of user document submissions.
+paperlessng_consumption_dir: '/data/consume'
+
+# Location of configuration data.
+paperlessng_data_dir: '/data/data'
+
+# Location of stored user data. May be the same as paperlessng_data_dir.
+paperlessng_media_root: '/data/media'
+
+# Location of static serving directory. If you don't know why you should
+# change this, don't. Default: '' (autoconfigure to installed location/static).
+paperlessng_staticdir: ''
+
+# Location of logs. If you don't know why you should change this, don't.
+# default: '{{ paperlessng_data_dir }}/log'.
+paperlessng_logging_dir: '{{ paperlessng_data_dir }}/log'
+
+# Max log size before rotation in MiB. Default: 1
+paperlessng_logrotate_max_size: 1
+
+# Max number of rotated logs to keep. Default: 20
+paperlessng_logrotate_max_backups: 20
+
+# Ingested media file naming conventions. If this is changed after documents
+# are loaded run 'document_renamer' to mass update files. You many need to
+# temporarily enable the paperlessng_user user shell to login and run the
+# command.
+#
+#   su - { paperlessng_user }
+#   cd /var/lib/paperlessng-X.X.X/scripts
+#   . ../.venv/bin/activate
+#   python3 manage.py document_renamer
+#
+# Reference:
+# * https://paperless-ng.readthedocs.io/en/latest/advanced_usage.html#advanced-file-name-handling
+# * https://paperless-ng.readthedocs.io/en/latest/administration.html#management-utilities
+# * https://paperless-ng.readthedocs.io/en/latest/administration.html#managing-filenames
+paperlessng_filename_format: ''
+
+# Used for session token generation. Specify custom token.
+# Default: Randomly generated 50 characters.
+paperlessng_secret_key: "{{ lookup('password', '/dev/null chars=ascii_lowercase,digits length=50') }}"
+
+# Hosts allowed to connect. Default: ['*']. Restrict to known hosts only.
+paperlessng_allowed_hosts:
+  - '*'
+
+# Cross origin resource sharing (CORS) allowed hosts. Servers should be added
+# here (like nginx). Default: ['http://localhost:8000']
+#
+# Reference:
+# * https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS
+paperlessng_cors_allowed_hosts:
+  - 'http://localhost:8000'
+
+# Hosting path, if not using a subdomain. Include /.
+# e.g. '/paperless' would result in http://www.example.com/paperless
+paperlessng_force_script_name: ''
+
+# Static path. Update if paperlessng_force_script_name is used.
+paperlessng_static_url: '/static/'
+
+# User to automatically login as. Do not use if exposed externally.
+paperlessng_auto_login_username: ''
+
+# Cookie prefix. Use if running multiple instances on the same system.
+paperlessng_cookie_prefix: ''
+
+# Enables authentication via 'Remote-User'. Requests should come from trusted
+# sources. Use for SSO, do **not** use with proxy.
+#
+# Reference:
+# * https://docs.djangoproject.com/en/3.1/howto/auth-remote-user/#configuration
+paperlessng_enable_http_remote_user: false
+
+# Langauge that OCR will process with. Multiple languages will be attempted in
+# defined order.
+paperlessng_ocr_language:
+  - 'eng'
+
+# How to performce OCR document scanning. Default 'skip'.
+# * skip:
+#     Skip all pages and perform OCR only on pages where no text present. This
+#     is the safest option.
+# * skip_noarchive:
+#     In addition to 'skip', paperless won’t create an archived version of your
+#     documents when it finds any text in them. This is useful if you don’t
+#     want to have two almost-identical versions of your digital documents in
+#     the media folder. This is the fastest option.
+# * redo:
+#     Paperless will OCR all pages of your documents and attempt to replace any
+#     existing text layers with new text. This will be useful for documents
+#     from scanners that already performed OCR with insufficient results. It
+#     will also perform OCR on purely digital documents. This option may fail
+#     on some documents that have features that cannot be removed, such as
+#     forms. In this case, the text from the document is used instead.
+# * force:
+#     Paperless rasterizes your documents, converting any text into images and
+#     puts the OCRed text on top. This works for all documents, however, the
+#     resulting document may be significantly larger and text won’t appear as
+#     sharp when zoomed in.
+paperlessng_ocr_mode: 'skip'
+
+# Type of documents that OCR should produce. The original is always kept.
+# Default: 'pdfa'
+# * pdf:
+#     Modify the PDF document as little as possible.
+# * pdfa:
+#     Convert PDF documents into PDF/A-2b documents, which is a subset of the
+#     entire PDF specification and meant for storing documents long term.
+# * pdfa-1, pdfa-2, pdfa-3:
+#     specify the exact version of PDF/A you wish to use.
+paperlessng_ocr_output_type: 'pdfa'
+
+# Number of pages to process with OCR. Default: 0 (all).
+# With paperlessng_ocr_mode: redo or paperlessng_ocr_mode: force, paperless
+# will not modify any text it finds on excluded pages and copy it verbatim.
+paperlessng_ocr_pages: 0
+
+# DPI of scanned images. Set to printer image scan DPI.
+paperlessng_ocr_image_dpi: 600
+
+# Use unpaper to clean document before sending to tesseract. Generally produces
+# better OCR results.
+# * clean:
+#     Apply unpaper.
+# * clean-final:
+#     Apply unpaper, and use the cleaned images to build the output file
+#     instead of the original images.
+# * none:
+#     Do not apply unpaper.
+paperlessng_ocr_clean: 'clean'
+
+# Deskew images. Deskewing is incompatible with paperlessng_ocr_mode: redo and
+# will be be disabled automatically if set.
+paperlessng_ocr_deskew: true
+
+# Rotate pages to correct orientation based tesseract analysis.
+paperlessng_ocr_rotate_pages: true
+
+# threshold for automatic page rotation. 15 is conservative, 2 is agressive.
+# Default: 12.0.
+paperlessng_ocr_rotate_pages_threshold: 12.0
+
+# Additional ocrmypdf options as a list of dicts. Automatically converted to
+# JSON. Default: [{'optimize': 1}] (Enable lossless optimizations).
+#
+# Reference:
+# * https://ocrmypdf.readthedocs.io/en/latest/api.html#reference
+paperlessng_ocr_user_args:
+  - {'optimize': 1}
+
+# Document conversion memory limit in MB. 0 disables. Default: 0.
+# Errors with 'unable to extend pixel cache' are from this limit.
+paperlessng_convert_memory_limit: 0
+
+# Document conversion temp directory. Empty Disables.
+paperlessng_convert_tmpdir: '/var/tmp/paperless'
+
+# How many tasks to run in parallel. Do not exceed worker*thread=core count.
+#
+# Cores Workers Threads
+# 1     1       1
+# 2     2       1
+# 4     2       2
+# 6     2       3
+# 8     2       4
+# 12    3       4
+# 16    4       4
+#
+# Reference:
+# * https://paperless-ng.readthedocs.io/en/latest/configuration.html
+paperlessng_task_workers:       1
+paperlessng_threads_per_worker: 1
+
+# Timezone for document processing.
+paperlessng_time_zone: 'UTC'
+
+# Filesystem polling interval in seconds. Inotify used if disabled, however
+# this may lead to processing of partial file uploads. Default: 0 (disabled).
+paperlessng_consumer_polling: 0
+
+# If a duplicate document is detected, should it be deleted?
+paperlessng_consumer_delete_duplicates: false
+
+# Recursively watch paperlessng_consumption_dir for changes?
+paperlessng_consumer_recursive: false
+
+# Files to ignore in paperlessng_consumption_dir.
+paperlessng_consumer_ignore_patterns:
+  - '.ds_store/*'
+  - '._*'
+  - '.stfolder/*'
+
+# Autotag documents based on paperlessng_consumption_dir. Tags will be created
+# if needed, folders will not be deleted. Requires
+# paperlessng_consumer_recursive.
+paperlessng_consumer_subdirs_as_tags: false
+
+# Use optipng to reduce size of thumbnails (~20%). Default: true.
+paperlessng_optimize_thumbnails: true
+
+# Post process document with user defined script. Default: '' (disabled).
+#
+# Reference:
+# * https://paperless-ng.readthedocs.io/en/latest/advanced_usage.html#advanced-post-consume-script
+paperlessng_post_consume_script: ''
+
+# Use specified format for automatic document date detection; filename is
+# checked first, then document. Empty disables. Default: 'ymd'.
+# Reference:
+# * https://dateparser.readthedocs.io/en/latest/settings.html#date-order
+paperlessng_filename_date_order: 'YMD'
+
+# Regex list of filename transformations before filename parsing. Empty list
+# disables. Default: [].
+paperlessng_filename_parse_transforms: []
+
+# Font to use for plain text file thumbnail generation; does not apply to
+# already generated images. Default: /usr/share/fonts/liberation/LiberationSerif-Regular.ttf
+paperlessng_thumbnail_font_name: '/usr/share/fonts/liberation/LiberationSerif-Regular.ttf'
+
+# List of dates that should be ignored during creation date detection. This is useful for special
+# dates (like date of birth) that appear in documents regularly but are very unlikely to be the
+# documents creation date. Empty list disables. Default: [].
+#
+# Reference:
+# * https://dateparser.readthedocs.io/en/latest/#popular-formats
+paperlessng_ignore_dates: []
+
+# Enable the tika/gotenburg parsing. Requires a tika/gotenburg server.
+paperlessng_tika_enabled: false
+
+# Tika server to connect to.
+paperlessng_tika_endpoint: 'http://localhost:9998'
+
+# Gotenburg server to connect to.
+paperlessng_tika_gotenberg_endpoint: 'http://localhost:3000'
+
+# convert binary location.
+paperlessng_convert_binary: '/usr/bin/convert'
+
+# gs binary location.
+paperlessng_gs_binary: '/usr/bin/gs'
+
+# optipng binary location.
+paperlessng_optipng_binary: '/usr/bin/optipng'

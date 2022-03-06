@@ -10,6 +10,16 @@
 #   _paperlessng_venv: str versioned python virtual environment location.
 #   _paperlessng_install_dir: str versioned install location.
 #   _paperlessng_staticdir: str calculated static serving location.
+#   _paperlessng_convert_tmpdir: str path temp directory for processing.
+
+- name: 'config | create in-memory /tmp for processing'
+  ansible.posix.mount:
+    path:   '{{ _paperlessng_convert_tmpdir }}'
+    src:    'tmpfs'
+    fstype: 'tmpfs'
+    opts:   'defaults,size={{ paperlessng_tmp_memory }}'
+    state:  'mounted'
+  when: paperlessng_tmp_memory|length > 0
 
 - name: 'config | set paperlessng config'
   ansible.builtin.template:
@@ -21,7 +31,7 @@
   notify: 'reload paperlessng'
 
 - name: 'config | set consume permissions'
-  file:
+  ansible.builtin.file:
     path:  '{{ paperlessng_consumption_dir }}'
     owner: '{{ paperlessng_consumption_perms.user }}'
     group: '{{ paperlessng_consumption_perms.group }}'
@@ -30,7 +40,7 @@
   when: paperlessng_consumption_perms|length > 0
 
 - name: 'config | set data permissions'
-  file:
+  ansible.builtin.file:
     path:  '{{ paperlessng_data_dir }}'
     owner: '{{ paperlessng_data_perms.user }}'
     group: '{{ paperlessng_data_perms.group }}'
@@ -39,7 +49,7 @@
   when: paperlessng_data_perms|length > 0
 
 - name: 'config | set media permissions'
-  file:
+  ansible.builtin.file:
     path:  '{{ paperlessng_media_root }}'
     owner: '{{ paperlessng_media_perms.user }}'
     group: '{{ paperlessng_media_perms.group }}'
@@ -48,7 +58,7 @@
   when: paperlessng_media_perms|length > 0
 
 - name: 'config | set static dir permissions'
-  file:
+  ansible.builtin.file:
     path:  '{{ _paperlessng_staticdir }}'
     owner: '{{ paperlessng_staticdir_perms.user }}'
     group: '{{ paperlessng_staticdir_perms.group }}'
@@ -67,6 +77,11 @@
 
 - ansible.builtin.include_tasks: create_root.yml
 
+# Ghostscript RCE for versions < 9.25. Enable. Debian Bullseye is 9.53.
+#
+# Reference:
+# * https://www.kb.cert.org/vuls/id/332928/
+# * https://packages.debian.org/bullseye/ghostscript
 - name: 'config | enable imagemagick pdf processing'
   ansible.builtin.lineinfile:
     path:     '/etc/ImageMagick-6/policy.xml'

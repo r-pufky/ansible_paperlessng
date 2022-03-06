@@ -56,7 +56,7 @@ PAPERLESS_OCR_ROTATE_PAGES_THRESHOLD={{ paperlessng_ocr_rotate_pages_threshold }
 # Always use lossless compression if pdf/a high compression is used.
 PAPERLESS_OCR_USER_ARGS={{ paperlessng_ocr_user_args|combine({'jbig2_lossy': false} if paperlessng_pfda_compression else {})|to_json }}
 PAPERLESS_CONVERT_MEMORY_LIMIT={{ paperlessng_convert_memory_limit }}
-PAPERLESS_CONVERT_TMPDIR={{ paperlessng_convert_tmpdir }}
+PAPERLESS_CONVERT_TMPDIR={{ _paperlessng_convert_tmpdir }}
 
 # Software tweaks
 

@@ -20,6 +20,7 @@
 #   _paperlessng_service_consumer: str path to consumer service definition.
 #   _paperlessng_service_scheduler: str path to scheduler service definition.
 #   _paperlessng_service_webserver: str path to webserver service definition.
+#   _paperlessng_convert_tmpdir: str path temp directory for processing.
 #
 # Reference:
 # * https://paperless-ng.readthedocs.io/en/latest/index.html
@@ -46,10 +47,11 @@
 
 - name: 'core | generate versioned locations'
   ansible.builtin.set_fact:
-    _paperlessng_ocr_packages: '{% if paperlessng_ocr_languages|length == 0 %}{{ ["tesseract-ocr-all"] }}{% else %}{{ paperlessng_ocr_languages|map("regex_replace", "^(.*)$", "tesseract-ocr-\1")|list }}{% endif %}'
-    _paperlessng_url:          'https://github.com/jonaswinkler/paperless-ng/releases/download/{{ paperlessng_version }}/paperless-{{ paperlessng_version }}.tar.xz'
-    _paperlessng_install_dir:  '{{ paperlessng_default_install_dir }}/paperlessng-{{ _paperlessng_target }}'
-    _paperlessng_archive:      '/tmp/paperlessng-{{ _paperlessng_target }}.tar.xz'
+    _paperlessng_ocr_packages:   '{% if paperlessng_ocr_languages|length == 0 %}{{ ["tesseract-ocr-all"] }}{% else %}{{ paperlessng_ocr_languages|map("regex_replace", "^(.*)$", "tesseract-ocr-\1")|list }}{% endif %}'
+    _paperlessng_url:            'https://github.com/jonaswinkler/paperless-ng/releases/download/{{ paperlessng_version }}/paperless-{{ paperlessng_version }}.tar.xz'
+    _paperlessng_install_dir:    '{{ paperlessng_default_install_dir }}/paperlessng-{{ _paperlessng_target }}'
+    _paperlessng_archive:        '/tmp/paperlessng-{{ _paperlessng_target }}.tar.xz'
+    _paperlessng_convert_tmpdir: '{{ paperlessng_convert_tmpdir if paperlessng_tmp_memory|length == 0 else "/tmp" }}'
 
 - name: 'core | generate install configuration'
   ansible.builtin.set_fact:

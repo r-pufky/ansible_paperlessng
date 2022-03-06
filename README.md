@@ -6,7 +6,7 @@ No additional requirements.
 
 ## Role Variables
 Settings have been throughly documented for usage.
-[defaults/main.yml](https://github.com/r-pufky/ansible_paperlessng/blob/main/defaults/main.yml).
+[defaults/main/main.yml](https://github.com/r-pufky/ansible_paperlessng/blob/main/defaults/main/main.yml).
 
 ## Dependencies
 N/A
@@ -70,14 +70,14 @@ and run managment utilties. It is **highly** recommended that the user shell be
 disabled after use.
 
 ```bash
-su - { paperlessng_user }
+su - {{ paperlessng_user }}
 cd /var/lib/paperlessng-X.X.X/scripts
 . ../.venv/bin/activate
 python3 manage.py document_renamer
 ```
 [Reference](https://paperless-ng.readthedocs.io/en/latest/administration.html?highlight=management%20utilies#management-utilities)
 
-`img2pdf` has been included to provide increased funcationality for import
+`img2pdf` has been included to provide increased functionality for import
 scripts. This will enable lossless conversion of images to pdf's, enabling
 import into paperless. The following example will strip alpha channel data from
 png's and convert to a lossless pdf for import.
