@@ -1,5 +1,12 @@
-# Paperless-ng
+# Paperless-NG Deprecated
 Paperlessng install from source.
+
+**Deprecated**. [Paperless-NG](https://github.com/jonaswinkler/paperless-ng) is
+no longer maintained upstream. See [migration instructions to migrate](https://github.com/r-pufky/ansible_paperless_ngx#migration-from-r_pufkypaperlessng-paperless-ng-to-paperless-ngx)
+to [Paperless-NGX](https://github.com/paperless-ngx/paperless-ngx); a community
+maintained fork.
+
+This ansible role has been migrated to [r_pufky.paperless_ngx](https://galaxy.ansible.com/r_pufky/paperless_ngx).
 
 ## Requirements
 No additional requirements.
@@ -87,6 +94,69 @@ convert test.png -background white -alpha remove -alpha off out.png
 img2pdf out.png -o import.pdf
 ```
 [Reference](https://github.com/josch/img2pdf)
+
+## Migration From r_pufky.paperlessng (Paperless-NG to Paperless-NGX)
+This ansible role has been migrated to [r_pufky.paperless_ngx](https://galaxy.ansible.com/r_pufky/paperless_ngx).
+
+In place migrations from NG to NGX can be done using this role if the
+following conditions are met:
+1. Ensure the last release of paperless-ng is already deployed (1.5.0) and
+   sucessfully launched. Shutdown.
+2. Backup your data, and your databases. Recommend cloning your paperless
+   instance as well.
+3. Role variables are migrated and updated from `paperlessng_` to `pngx_`.
+   Many variables have been added, removed, or changed. The easiest way is to
+   start fresh with a new copy of `defaults/main.yml` and add your existing
+   values into it for your host. Specifically watch out for:
+
+   Variables Dropped:
+   * `paperlessng_worker_retry` (removed).
+   * `paperlessng_filename_parse_transforms` (removed).
+   * `paperlessng_enable_update_check` (moved to UI toggle).
+
+   Variables Explicitly Changed:
+   * `paperlessng_root_name` --> `pngx_admin_name`
+   * `paperlessng_root_email` --> `pngx_admin_email`
+   * `paperlessng_root_password` --> `pngx_admin_password`
+   * `paperlessng_ocr_rotate_pages_threshold` (float) --> `pngx_ocr_rotate_pages_threshold` (int)
+
+   See [proxy instuctions below](#reverse-proxy-migration-changes) for reverse
+   proxy changes.
+4. Database backend changes are **not** supported. Database migrations to NGX
+   are done automatically during role application.
+
+[Reference](https://docs.paperless-ngx.com/setup/#migrating-from-paperless-ng)
+
+### Reverse Proxy Migration Changes
+Reverse proxy configuration has drastically **changed**. Be sure to set the
+following configuration variables:
+
+host_vars/paperless.example.com/vars/paperless.yml
+``` yaml
+pngx_use_x_forward_host: true
+pngx_use_x_forward_port: true
+pngx_url: 'https://paperless.example.com'
+pngx_csrf_trusted_origins: 'https://paperless.example.com'
+pngx_allowed_hosts: 'paperless.example.com'
+pngx_cors_allowed_hosts: 'https://paperless.example.com'
+```
+See linked bugs detailing reasons for change:
+* https://github.com/paperless-ngx/paperless-ngx/pull/674
+* https://github.com/paperless-ngx/paperless-ngx/issues/817
+* https://github.com/paperless-ngx/paperless-ngx/issues/712
+
+Recieving a 403 after logging in explicitly after upgrading with:
+```
+Forbidden (403) CSRF verification failed. Request aborted.
+```
+See the [Proxy Rule Changes](https://github.com/paperless-ngx/paperless-ngx/wiki/Using-a-Reverse-Proxy-with-Paperless-ngx#nginx)
+and be sure to add referrer-policy to allow requests through:
+
+```
+add_header Referrer-Policy 'strict-origin-when-cross-origin';
+```
+
+Restart both NGINX and Paperless and try again.
 
 ## Issues
 Create a bug and provide as much information as possible.
